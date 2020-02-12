@@ -1,0 +1,44 @@
+project_name: kubectl-traceroute
+release:
+  github:
+    owner: replicatedhq
+    name: kubectl-traceroute
+builds:
+  - id: traceroute
+    goos:
+    - linux
+    - windows
+    - darwin
+    goarch:
+    - amd64
+    - "386"
+    env:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+    main: cmd/kubectl-traceroute/main.go
+    ldflags: -s -w
+      -X github.com/replicatedhq/kubectl-traceroute/pkg/version.version={{.Version}}
+      -X github.com/replicatedhq/kubectl-traceroute/pkg/version.gitSHA={{.Commit}}
+      -X github.com/replicatedhq/kubectl-traceroute/pkg/version.buildTime={{.Date}}
+      -extldflags "-static"
+    flags: -tags netgo -installsuffix netgo
+    binary: kubectl-traceroute
+    hooks: {}
+archives:
+  - id: kubectl-traceroute
+    builds:
+      - kubectl-traceroute
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: '{{ .Binary }}_{{.Version}}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{.Arm }}{{ end }}-{{ .Major }}.{{ .Minor }}.{{ .Patch }}'
+    files:
+      - licence*
+      - LICENCE*
+      - license*
+      - LICENSE*
+      - readme*
+      - README*
+      - changelog*
+      - CHANGELOG*
