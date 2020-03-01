@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kubectl-traceroute/pkg/logger"
@@ -92,35 +91,49 @@ func RootCmd() *cobra.Command {
 
 			}
 
-			deployment, err := traceroute.GetMatchingDeployment(clientset, svc)
+			endpoints, err := traceroute.GetServiceEndpoints(clientset, svc)
 			if err != nil {
 				log.Error(err)
 				return err
 			}
-			if deployment == nil {
-				log.Info("  x    x    x    no matching deployment found")
+			if len(endpoints.Subsets) == 0 {
+				log.Info("  x    x    x    no endpoints on service")
+
+				// Print helpful information here
 				os.Exit(1)
 			}
-			log.Info("  ✓    ✓    ✓    Deployment/%s", deployment.Name)
-			log.Info("  ✓    ✓    ✓    %d replicas of deployment should be present", *deployment.Spec.Replicas)
 
-			checkCount := 0
-			for checkCount < 3 {
-				healthy, total, err := traceroute.GetDeploymentReplicaCount(clientset, deployment)
-				if err != nil {
-					log.Error(err)
-					return err
-				}
-
-				if checkCount < 2 {
-					log.InfoNoNewLine(" %d/%d ", healthy, total)
-					time.Sleep(time.Second)
-				} else {
-					log.Info(" %d/%d   ready replicas of deployment found", healthy, total)
-				}
-
-				checkCount++
+			readyEndpointCount := 0
+			notReadyEndpointCount := 0
+			for _, subset := range endpoints.Subsets {
+				readyEndpointCount += len(subset.Addresses)
+				notReadyEndpointCount += len(subset.NotReadyAddresses)
 			}
+			if readyEndpointCount == 0 {
+				log.Info("  x    x    x    no endpoints are ready")
+
+				// Print helpful information here
+				os.Exit(1)
+			}
+			log.Info("  ✓    ✓    ✓    %d endpoint(s) exist", len(endpoints.Subsets))
+
+			// checkCount := 0
+			// for checkCount < 3 {
+			// 	healthy, total, err := traceroute.GetDeploymentReplicaCount(clientset, deployment)
+			// 	if err != nil {
+			// 		log.Error(err)
+			// 		return err
+			// 	}
+
+			// 	if checkCount < 2 {
+			// 		log.InfoNoNewLine(" %d/%d ", healthy, total)
+			// 		time.Sleep(time.Second)
+			// 	} else {
+			// 		log.Info(" %d/%d   ready replicas of deployment found", healthy, total)
+			// 	}
+
+			// 	checkCount++
+			// }
 
 			log.Info("")
 
