@@ -88,10 +88,19 @@ func GetMatchingDeployment(clientset *kubernetes.Clientset, svc *corev1.Service)
 	return matchingDeployments[0], nil
 }
 
+func GetStatefulsetReplicaCount(clientset *kubernetes.Clientset, statefulset *appsv1.StatefulSet) (int32, int32, error) {
+	foundStatefulset, err := clientset.AppsV1().StatefulSets(statefulset.Namespace).Get(statefulset.Name, metav1.GetOptions{})
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "failed to get statefulset")
+	}
+
+	return foundStatefulset.Status.ReadyReplicas, foundStatefulset.Status.Replicas, nil
+}
+
 func GetDeploymentReplicaCount(clientset *kubernetes.Clientset, deployment *appsv1.Deployment) (int32, int32, error) {
 	foundDeployment, err := clientset.AppsV1().Deployments(deployment.Namespace).Get(deployment.Name, metav1.GetOptions{})
 	if err != nil {
-		return 0, 0, errors.Wrap(err, "failed to get deplyoment")
+		return 0, 0, errors.Wrap(err, "failed to get deployment")
 	}
 
 	return foundDeployment.Status.ReadyReplicas, foundDeployment.Status.Replicas, nil
