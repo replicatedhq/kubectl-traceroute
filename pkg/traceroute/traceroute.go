@@ -150,7 +150,7 @@ func (t *Traceroute) Run() error {
 
 		t.log.Info("\n")
 
-		os.Exit(1)
+		return nil
 	}
 
 	readyEndpointCount := 0
