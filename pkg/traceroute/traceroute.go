@@ -96,6 +96,12 @@ func (t *Traceroute) Run() error {
 	}
 	t.selectedDeployment = deployment
 
+	statefulset, err := GetMatchingStatefulset(t.clientset, t.svc)
+	if err != nil {
+		return errors.Wrap(err, "ffailed to get matching statefulsets")
+	}
+	t.selectedStatefulset = statefulset
+
 	endpoints, err := GetServiceEndpoints(t.clientset, svc)
 	if err != nil {
 		log.Error(err)
@@ -106,7 +112,14 @@ func (t *Traceroute) Run() error {
 
 		// Print helpful information here
 		t.log.Info("\n")
-		t.log.Info(`No endpoints found mean...`)
+		if t.selectedDeployment != nil {
+			t.log.Info(`No endpoints but there is a deployment...`)
+		} else if t.selectedStatefulset != nil {
+			t.log.Info(`No endpoints but there is a statefulset...`)
+		} else {
+			t.log.Info(`No endpoints found mean...`)
+		}
+
 		t.log.Info("\n")
 
 		os.Exit(1)
